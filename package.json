@@ -1,8 +1,12 @@
 {
   "name": "@ivaniuk/telegraf-session-redis",
   "version": "0.0.0",
-  "description": "",
-  "keywords": [],
+  "description": "telegraf redis session",
+  "keywords": [
+    "telegraf",
+    "redis",
+    "session"
+  ],
   "main": "dist/lib/index.js",
   "typings": "dist/types/index.d.ts",
   "files": [
