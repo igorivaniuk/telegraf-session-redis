@@ -13,6 +13,9 @@
     "type": "git",
     "url": "git+https://github.com/igorivaniuk/telegraf-session-redis.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=10.0.0"
