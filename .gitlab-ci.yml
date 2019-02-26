@@ -1,0 +1,35 @@
+image: node:10
+
+stages:
+  - build
+  - test
+  - release
+
+
+before_script:
+  - npm install
+
+build:
+  stage: build
+  artifacts:
+    paths:
+      - dist/
+  script:
+    - npm run build
+
+test:
+  stage: test
+  services:
+    - redis:4-alpine
+  variables:
+    TELEGRAM_SESSION_HOST: redis
+  script:
+    - npm test
+
+publish:
+  stage: release
+  only:
+  - master
+  when: manual
+  script:
+    - npm run semantic-release
