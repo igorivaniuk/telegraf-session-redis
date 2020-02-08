@@ -1,15 +1,14 @@
-import { RedisClient } from 'redis'
+import { Redis } from 'ioredis'
 import { Context, ContextMessageUpdate, Middleware } from 'telegraf'
-import { ContextUpdate, RedisOptions } from './interfaces'
+import { SessionOptions } from './interfaces'
 
 const debug = require('debug')('telegraf:session-redis')
-const redis = require('redis')
 
 export class TelegrafSessionRedis {
-  client: RedisClient
-  options: RedisOptions
+  client: Redis
+  options: SessionOptions
 
-  constructor(options: RedisOptions) {
+  constructor(options: SessionOptions) {
     this.options = Object.assign(
       {
         property: 'session',
@@ -19,58 +18,40 @@ export class TelegrafSessionRedis {
       options
     )
 
-    this.client = redis.createClient(this.options.store)
+    this.client = this.options.client
   }
 
-  getSession(key: string): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
-      this.client.get(key, (err, json) => {
-        if (err) {
-          return reject(err)
-        }
-        if (json) {
-          try {
-            const session = JSON.parse(json)
-            debug('session state', key, session)
-            resolve(session)
-          } catch (error) {
-            debug('Parse session state failed', error)
-          }
-        }
-        resolve({})
-      })
-    })
+  async getSession(key: string): Promise<any> {
+    let json = await this.client.get(key)
+    if (!json) {
+      return {}
+    }
+    try {
+      const session = JSON.parse(json)
+      debug('session state', key, session)
+      return session
+    } catch (error) {
+      debug('Parse session state failed', error)
+    }
+    return {}
   }
 
-  clearSession(key: string): Promise<void> {
+  async clearSession(key: string): Promise<void> {
     debug('clear session', key)
-    return new Promise((resolve, reject) => {
-      this.client.del(key, (err, json) => {
-        if (err) {
-          return reject(err)
-        }
-        resolve()
-      })
-    })
+    await this.client.del(key)
   }
 
   async saveSession(key: string, session: object): Promise<any> {
     if (!session || Object.keys(session).length === 0) {
       return this.clearSession(key).then(() => ({}))
     }
-    debug('save session', key, session)
-    return new Promise((resolve, reject) => {
-      this.client.set(key, JSON.stringify(session), (err, json) => {
-        if (err) {
-          return reject(err)
-        }
-        if (this.options.ttl) {
-          debug('session ttl', session)
-          this.client.expire(key, this.options.ttl)
-        }
-        resolve({})
-      })
-    })
+    if (this.options.ttl) {
+      debug('session ttl', session)
+      await this.client.setex(key, this.options.ttl, JSON.stringify(session))
+    } else {
+      debug('save session', key, session)
+      await this.client.set(key, JSON.stringify(session))
+    }
   }
 
   middleware(): Middleware<ContextMessageUpdate> {

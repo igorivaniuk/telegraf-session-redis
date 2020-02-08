@@ -1,5 +1,11 @@
+import * as IORedis from 'ioredis'
 import Telegraf, { ContextMessageUpdate } from 'telegraf'
 import { TelegrafSessionRedis } from '../src'
+
+let client = new IORedis({
+  host: process.env.TELEGRAM_SESSION_HOST || '127.0.0.1',
+  port: parseInt(process.env.TELEGRAM_SESSION_PORT || '6379')
+})
 
 describe('TelegrafSessionRedis', () => {
   let app = new Telegraf<ContextMessageUpdate & { session: any }>('')
@@ -8,10 +14,7 @@ describe('TelegrafSessionRedis', () => {
   const key = '1:1'
   beforeAll(async () => {
     session = new TelegrafSessionRedis({
-      store: {
-        host: process.env.TELEGRAM_SESSION_HOST || '127.0.0.1',
-        port: process.env.TELEGRAM_SESSION_PORT || 6379
-      },
+      client,
       ttl: 100
     })
     await session.clearSession(key)

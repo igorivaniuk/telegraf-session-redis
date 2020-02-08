@@ -1,4 +1,4 @@
 import { TelegrafSessionRedis } from './telegraf-session-redis'
-import { RedisOptions } from './interfaces'
+import { SessionOptions } from './interfaces'
 
-export { TelegrafSessionRedis, RedisOptions }
+export { TelegrafSessionRedis, SessionOptions }
