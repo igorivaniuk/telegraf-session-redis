@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { Context, ContextMessageUpdate, Middleware } from 'telegraf'
+import { Context, Middleware } from 'telegraf'
 import { SessionOptions } from './interfaces'
 
 const debug = require('debug')('telegraf:session-redis')
@@ -54,8 +54,8 @@ export class TelegrafSessionRedis {
     }
   }
 
-  middleware(): Middleware<ContextMessageUpdate> {
-    return async (ctx: ContextMessageUpdate, next: any) => {
+  middleware(): Middleware<any> {
+    return async (ctx: Context, next: any) => {
       const key = this.options.getSessionKey!(ctx)
       if (!key) {
         return next()

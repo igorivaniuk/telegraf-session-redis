@@ -1,5 +1,6 @@
 import * as IORedis from 'ioredis'
-import Telegraf, { ContextMessageUpdate } from 'telegraf'
+import Telegraf from 'telegraf'
+import { SceneContextMessageUpdate } from 'telegraf/typings/stage'
 import { TelegrafSessionRedis } from '../src'
 
 let client = new IORedis({
@@ -7,8 +8,20 @@ let client = new IORedis({
   port: parseInt(process.env.TELEGRAM_SESSION_PORT || '6379')
 })
 
+export interface SessionsData {
+  state?: object
+  current?: string
+  expires?: number
+  [key: string]: any
+}
+
+export interface UpdateContext<TSession extends any = SessionsData>
+  extends SceneContextMessageUpdate {
+  session: TSession
+}
+
 describe('TelegrafSessionRedis', () => {
-  let app = new Telegraf<ContextMessageUpdate & { session: any }>('')
+  let app = new Telegraf<UpdateContext>('')
   let session: TelegrafSessionRedis
   let update = { message: { chat: { id: 1 }, from: { id: 1 }, text: 'hey' } } as any
   const key = '1:1'
@@ -38,7 +51,7 @@ describe('TelegrafSessionRedis', () => {
     res.foo = 42
     await session.saveSession(key, res)
 
-    let app = new Telegraf<ContextMessageUpdate & { session: any }>('')
+    let app = new Telegraf<UpdateContext>('')
 
     app.use(session.middleware(), async (ctx, next: any) => {
       ctx.session.bar = 101
@@ -52,7 +65,7 @@ describe('TelegrafSessionRedis', () => {
   })
 
   it('should replace session', async () => {
-    let app = new Telegraf<ContextMessageUpdate & { session: any }>('')
+    let app = new Telegraf<UpdateContext>('')
 
     app.use(session.middleware(), async (ctx, next: any) => {
       ctx.session = { test: 1, user: 2 }
@@ -64,7 +77,7 @@ describe('TelegrafSessionRedis', () => {
   })
 
   it('should handle existing session', async done => {
-    app = new Telegraf<ContextMessageUpdate & { session: any }>('')
+    app = new Telegraf<UpdateContext>('')
     app.use(session.middleware(), ctx => {
       expect('session' in ctx).toBe(true)
       expect(ctx.session.test).toBe(1)
@@ -75,7 +88,7 @@ describe('TelegrafSessionRedis', () => {
   })
 
   it('should handle not existing session', async done => {
-    app = new Telegraf<ContextMessageUpdate & { session: any }>('')
+    app = new Telegraf<UpdateContext>('')
     await session.clearSession(key)
     app.on('text', session.middleware(), ctx => {
       expect('session' in ctx).toBe(true)
